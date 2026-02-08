@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Local Test Form</title>
+</head>
+<body>
+
+  <h2>LOCAL DB TEST</h2>
+
+  <form id="testForm">
+    <p>Name</p>
+    <input type="text" name="name" required>
+
+    <p>Age</p>
+    <input type="text" name="age" required>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <script>
+    document.getElementById('testForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        token: "TEST_TOKEN",
+        age: "19-25",
+        persona: "Test",
+        purpose: "Test",
+        familiarity: "Yes",
+        language_level: "Simple",
+        depth: "Short"
+      };
+
+      const res = await fetch('/api/visitor/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+      alert(JSON.stringify(result));
+    });
+  </script>
+
+</body>
+</html>
