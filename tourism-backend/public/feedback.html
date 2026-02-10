@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Session Feedback</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h2 { margin-bottom: 10px; }
+
+    .stars {
+      font-size: 35px;
+      cursor: pointer;
+      margin: 20px 0;
+    }
+
+    .star { color: lightgray; }
+    .star.active { color: orange; }
+
+    textarea {
+      width: 90%;
+      height: 100px;
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 10px;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      border: none;
+      background-color: #2196f3;
+      color: white;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:disabled { background-color: gray; }
+
+    .success { color: green; font-weight: bold; margin-top: 20px; }
+    .error { color: red; font-weight: bold; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<h2>Rate Your Experience</h2>
+
+<div id="stars" class="stars"></div>
+
+<textarea id="feedback" placeholder="Write your feedback..."></textarea>
+
+<br>
+<button id="submitBtn">Submit Feedback</button>
+
+<div id="message"></div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+
+  console.log("TOKEN =", token);
+
+  const messageDiv = document.getElementById("message");
+  const starsDiv = document.getElementById("stars");
+  const submitBtn = document.getElementById("submitBtn");
+
+  let selectedRating = 0;
+
+  // =========================
+  // VERIFY TOKEN
+  // =========================
+  async function verifyToken() {
+    if (!token) {
+      messageDiv.innerHTML =
+        '<div class="error">Token missing</div>';
+      submitBtn.disabled = true;
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/feedback/${token}`);
+      console.log("VERIFY STATUS:", res.status);
+
+      if (!res.ok) throw new Error();
+
+      console.log("✅ TOKEN VALID");
+
+    } catch (e) {
+      console.log("❌ TOKEN INVALID");
+      messageDiv.innerHTML =
+        '<div class="error">Invalid or expired QR</div>';
+      submitBtn.disabled = true;
+    }
+  }
+
+  // =========================
+  // BUILD STARS
+  // =========================
+  function renderStars() {
+    starsDiv.innerHTML = "";
+
+    for (let i = 1; i <= 5; i++) {
+      const span = document.createElement("span");
+      span.innerHTML = "★";
+      span.className = "star";
+
+      span.onclick = () => {
+        selectedRating = i;
+        updateStars();
+      };
+
+      starsDiv.appendChild(span);
+    }
+  }
+
+  function updateStars() {
+    const starEls = document.querySelectorAll(".star");
+    starEls.forEach((s, index) => {
+      s.classList.toggle("active", index < selectedRating);
+    });
+  }
+
+  // =========================
+  // SUBMIT
+  // =========================
+  submitBtn.onclick = async () => {
+    if (selectedRating === 0) {
+      alert("Please select rating");
+      return;
+    }
+
+    submitBtn.disabled = true;
+
+    const payload = {
+      token,
+      rating: selectedRating,
+      feedback: document.getElementById("feedback").value
+    };
+
+    console.log("SENDING:", payload);
+
+    try {
+      const res = await fetch('/api/feedback/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await res.json();
+
+      console.log("SUBMIT STATUS:", res.status);
+      console.log("RESPONSE:", result);
+
+      if (!res.ok) throw new Error(result.message);
+
+      messageDiv.innerHTML =
+        '<div class="success">✅ Thank you for your feedback!</div>';
+
+      starsDiv.style.display = 'none';
+      document.getElementById("feedback").style.display = 'none';
+      submitBtn.style.display = 'none';
+
+    } catch (err) {
+      console.log("❌ SUBMIT FAILED", err);
+      messageDiv.innerHTML =
+        '<div class="error">Failed to submit</div>';
+      submitBtn.disabled = false;
+    }
+  };
+
+  renderStars();
+  verifyToken();
+</script>
+
+</body>
+</html>

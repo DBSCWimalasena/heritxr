@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profile_page.dart';
+import 'visitor_analytics_page.dart';
 
 class VisitorQueuePage extends StatelessWidget {
   final String name;
@@ -30,7 +31,9 @@ class VisitorQueuePage extends StatelessWidget {
 
       body: Column(
         children: [
+          // ======================
           // COVER
+          // ======================
           Container(
             height: 220,
             width: double.infinity,
@@ -54,8 +57,11 @@ class VisitorQueuePage extends StatelessWidget {
 
           const SizedBox(height: 40),
 
+          // ======================
+          // VISITOR LIST
+          // ======================
           actionButton(
-            text: "Visitor list",
+            text: "Visitor List",
             onTap: () {
               Navigator.pushNamed(context, '/visitor-list');
             },
@@ -63,16 +69,38 @@ class VisitorQueuePage extends StatelessWidget {
 
           const SizedBox(height: 20),
 
+          // ======================
+          // ADD VISITOR
+          // ======================
           actionButton(
             text: "Add Visitor",
             onTap: () {
               Navigator.pushNamed(context, '/add-visitor');
             },
           ),
+
+          const SizedBox(height: 20),
+
+          // ======================
+          // VISITOR ANALYTICS (NEW)
+          // ======================
+          actionButton(
+            text: "Visitor Analytics",
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const VisitorAnalyticsPage(),
+                ),
+              );
+            },
+          ),
         ],
       ),
 
-      // ✅ SIMPLE & RELIABLE BOTTOM BAR
+      // ======================
+      // BOTTOM NAV BAR
+      // ======================
       bottomNavigationBar: BottomNavigationBar(
         onTap: (index) {
           if (index == 2) {
@@ -105,6 +133,9 @@ class VisitorQueuePage extends StatelessWidget {
     );
   }
 
+  // ======================
+  // REUSABLE BUTTON
+  // ======================
   Widget actionButton({
     required String text,
     required VoidCallback onTap,

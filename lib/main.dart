@@ -5,7 +5,6 @@ import 'sign_in_page.dart';
 import 'sign_up_page.dart';
 
 // VISITOR FLOW
-import 'visitor_queue_page.dart';
 import 'visitor_list_page.dart';
 import 'add_visitor_page.dart';
 

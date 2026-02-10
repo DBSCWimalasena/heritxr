@@ -5,18 +5,25 @@ require('dotenv').config();
 // ROUTES
 const adminRoutes = require('./routes/admin');
 const visitorRoutes = require('./routes/visitor');
+const analyticsRoutes = require('./routes/analytics');
+const feedbackRoutes = require('./routes/feedback'); // ✅ ADD THIS
+
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// 🔹 SERVE WEB PAGES (QR WEB FORM)
+// 🔹 SERVE WEB PAGES (QR WEB FORM & FEEDBACK)
 app.use(express.static('public'));
 
 // REGISTER ROUTES
 app.use('/api/admin', adminRoutes);
 app.use('/api/visitor', visitorRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/feedback', feedbackRoutes); // ✅ ADD THIS
+
+
 
 // ROOT TEST
 app.get('/', (req, res) => {

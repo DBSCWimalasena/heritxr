@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:qr_flutter/qr_flutter.dart';
 
 import 'config/api_config.dart';
 
@@ -38,7 +39,7 @@ class _VisitorListPageState extends State<VisitorListPage> {
           loading = false;
         });
       } else {
-        throw Exception('Failed to load visitors');
+        throw Exception();
       }
     } catch (e) {
       setState(() => loading = false);
@@ -63,9 +64,9 @@ class _VisitorListPageState extends State<VisitorListPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Visitor cancelled')),
         );
-        fetchVisitors(); // 🔄 refresh list
+        fetchVisitors();
       } else {
-        throw Exception('Cancel failed');
+        throw Exception();
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -75,7 +76,81 @@ class _VisitorListPageState extends State<VisitorListPage> {
   }
 
   // =========================
-  // STATUS COLOR
+  // CREATE FEEDBACK QR (VISITOR ID)
+  // =========================
+  Future<void> createFeedbackQr(int visitorId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/feedback/create'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'visitor_id': visitorId}),
+      );
+
+      print("STATUS: ${response.statusCode}");
+      print("BODY: ${response.body}");
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        final token = data['token'];
+
+        // ✅ FORCE LOCALHOST
+        final server = 'http://localhost:3000';
+
+        final url = '$server/feedback.html?token=$token';
+
+        print("TOKEN: $token");
+        print("SERVER: $server");
+        print("URL: $url");
+        print("OPENING QR DIALOG");
+
+        showQrDialog(url);
+      } else {
+        throw Exception();
+      }
+    } catch (e) {
+      print("ERROR: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to create QR')),
+      );
+    }
+  }
+
+  // =========================
+  // QR POPUP (FIXED CRASH)
+  // =========================
+  void showQrDialog(String url) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Scan for Feedback"),
+        content: SizedBox(
+          width: 220,
+          height: 260,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              QrImageView(
+                data: url,
+                size: 200,
+              ),
+              const SizedBox(height: 10),
+              const Text("Visitor scan using mobile"),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Close"),
+          )
+        ],
+      ),
+    );
+  }
+
+  // =========================
+  // STATUS
   // =========================
   Color getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -92,9 +167,6 @@ class _VisitorListPageState extends State<VisitorListPage> {
     }
   }
 
-  // =========================
-  // STATUS TEXT
-  // =========================
   String getStatusText(String status) {
     switch (status.toLowerCase()) {
       case 'waiting':
@@ -114,7 +186,6 @@ class _VisitorListPageState extends State<VisitorListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -128,7 +199,6 @@ class _VisitorListPageState extends State<VisitorListPage> {
         ),
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: loading
@@ -159,38 +229,19 @@ class _VisitorListPageState extends State<VisitorListPage> {
                 name: name,
                 status: getStatusText(rawStatus),
                 statusColor: getStatusColor(rawStatus),
+                showFeedback:
+                rawStatus.toLowerCase() == 'completed',
+                onFeedback: () => createFeedbackQr(visitorId),
               ),
             );
           },
         ),
       ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.groups),
-            label: "Visitor",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: "Search",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: "Profile",
-          ),
-        ],
-      ),
     );
   }
 
   // =========================
-  // CANCEL CONFIRM DIALOG
+  // CANCEL DIALOG
   // =========================
   void showCancelDialog(int visitorId, String name) {
     showDialog(
@@ -217,13 +268,15 @@ class _VisitorListPageState extends State<VisitorListPage> {
   }
 
   // =========================
-  // VISITOR ITEM UI
+  // ITEM UI
   // =========================
   Widget visitorItem({
     required int index,
     required String name,
     required String status,
     required Color statusColor,
+    required bool showFeedback,
+    required VoidCallback onFeedback,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,23 +300,33 @@ class _VisitorListPageState extends State<VisitorListPage> {
           ),
         ),
         const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              status,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Container(
+              padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: statusColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                status,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
+            if (showFeedback) ...[
+              const SizedBox(width: 10),
+              ElevatedButton(
+                onPressed: onFeedback,
+                child: const Text("Feedback"),
+              ),
+            ]
+          ],
         ),
         const SizedBox(height: 25),
       ],

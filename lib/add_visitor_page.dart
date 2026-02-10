@@ -15,7 +15,7 @@ class _AddVisitorPageState extends State<AddVisitorPage> {
   String selectedDuration = '5';
 
   final List<String> durations =
-  List.generate(16, (index) => '${index + 5}'); // 5 to 20
+  List.generate(16, (index) => '${index + 5}'); // 5 → 20
 
   final TextEditingController nameController = TextEditingController();
   bool loading = false;
@@ -32,8 +32,23 @@ class _AddVisitorPageState extends State<AddVisitorPage> {
     setState(() => loading = true);
 
     try {
+      final url = '${ApiConfig.baseUrl}/visitor/temp-create';
+
+      // =============================
+      // REQUEST LOG
+      // =============================
+      print("================================");
+      print("🟦 QR GENERATE API CALL");
+      print("POST: $url");
+      print("BODY:");
+      print({
+        "name": nameController.text.trim(),
+        "duration": int.parse(selectedDuration),
+      });
+      print("================================");
+
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/visitor/temp-create'),
+        Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "name": nameController.text.trim(),
@@ -41,9 +56,25 @@ class _AddVisitorPageState extends State<AddVisitorPage> {
         }),
       );
 
+      // =============================
+      // RESPONSE LOG
+      // =============================
+      print("🟩 RESPONSE STATUS: ${response.statusCode}");
+      print("🟩 RESPONSE BODY: ${response.body}");
+
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        // =============================
+        // ⭐ FINAL QR LINK LOG ⭐
+        // =============================
+        final visitLink =
+            "http://localhost:3000/visit.html?token=${data['token']}";
+
+        print("🔗 QR VISIT LINK:");
+        print(visitLink);
+        print("================================");
+
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -60,6 +91,8 @@ class _AddVisitorPageState extends State<AddVisitorPage> {
         );
       }
     } catch (e) {
+      print("❌ ERROR: $e");
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Server connection failed")),
       );
@@ -92,7 +125,6 @@ class _AddVisitorPageState extends State<AddVisitorPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             const Text("Visitor Name", style: TextStyle(fontSize: 14)),
             TextField(
               controller: nameController,

@@ -184,7 +184,7 @@ class _SignInPageState extends State<SignInPage> {
                     children: [
                       const Text("Remember me"),
                       Switch(
-                        activeColor: Colors.orange,
+                        activeThumbColor: Colors.orange,
                         value: rememberMe,
                         onChanged: (value) {
                           setState(() => rememberMe = value);

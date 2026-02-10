@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 
-// ✅ mysql2 promise wrapper
+// mysql2 promise wrapper
 const db = require('../db').promise();
 
 // ============================
@@ -10,7 +10,7 @@ const db = require('../db').promise();
 // ============================
 const tempVisitors = {};
 
-// 🔹 TEST TOKEN (for local browser testing)
+// 🔹 TEST TOKEN (optional)
 tempVisitors['TEST123'] = {
   name: 'Local Test User',
   duration: 10,
@@ -37,7 +37,15 @@ router.post('/temp-create', (req, res) => {
     createdAt: Date.now()
   };
 
-  console.log('TEMP VISITOR CREATED:', token, tempVisitors[token]);
+  // ⭐ LOG LINK
+  console.log('==============================');
+  console.log('📱 QR LINK GENERATED');
+  console.log('Name:', name);
+  console.log('Duration:', duration);
+  console.log('TOKEN:', token);
+  console.log(`OPEN: http://localhost:3000/api/visitor/temp/${token}`);
+  console.log('==============================');
+
   res.json({ token });
 });
 
@@ -93,34 +101,30 @@ router.post('/submit', async (req, res) => {
     const queueNumber = rows[0].count + 1;
 
     // ============================
-    // 🔁 ENUM SAFE MAPPING
+    // ENUM SAFE MAPPING
     // ============================
 
-    // visit_purpose ENUM
     let safeVisitPurpose = 'Enjoy Experience';
     if (visit_purpose === 'Assignment/study') safeVisitPurpose = 'Assignment/Study';
     else if (visit_purpose === 'Education') safeVisitPurpose = 'Education';
     else if (visit_purpose === 'Tourism') safeVisitPurpose = 'Tourism';
     else if (visit_purpose === 'Religious') safeVisitPurpose = 'Religious';
 
-    // explanation_type ENUM
     let safeExplanation = 'Balanced';
     if (explanation_type === 'Short') safeExplanation = 'Short Highlights';
     else if (explanation_type === 'Long') safeExplanation = 'Long Detailed';
 
-    // timeline ENUM
     let safeTimeline = 'Past to Present';
     if (timeline_direction === 'Present to Past') {
       safeTimeline = 'Present to Past';
     }
 
-    // preferred_time ENUM
     let safePreferredTime = 'Day';
     if (preferred_time === 'Night') safePreferredTime = 'Night';
     else if (preferred_time === 'Both') safePreferredTime = 'Both';
 
     // ============================
-    // 📝 INSERT VISITOR
+    // INSERT VISITOR
     // ============================
     await db.query(
       `INSERT INTO visitor (
@@ -161,7 +165,7 @@ router.post('/submit', async (req, res) => {
       ]
     );
 
-    // 🧹 Clear temp token
+    // 🧹 Clear temp
     delete tempVisitors[token];
 
     res.json({ message: 'Visitor data saved successfully' });
